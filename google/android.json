@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1093515279825",
+    "project_id": "ecommerapp-e2f0b",
+    "storage_bucket": "ecommerapp-e2f0b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093515279825:android:1c88248578bd2067bf74f0",
+        "android_client_info": {
+          "package_name": "com.neduet.tad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPnl6AvzGbAaR9P5NY51cvYlIdMa0qDKI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
