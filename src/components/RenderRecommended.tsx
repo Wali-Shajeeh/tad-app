@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import StarRating from 'react-native-star-rating';
+import StarRating from 'react-native-star-rating-widget';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 
 import { AppStackParamList } from '@/types/navigation';
@@ -98,15 +98,17 @@ const RenderRecommended: React.FC<{ item: Item }> = ({ item }) => {
               alignItems: 'center',
             }}
           >
-            <StarRating
-              disabled={true}
-              maxStars={5}
-              rating={Number(item['totalRatings'].averageRating)}
-              fullStarColor={'#ffe169'}
-              starSize={15}
-              emptyStarColor={currentTextColor}
-              containerStyle={{ justifyContent: 'flex-start', gap: 5 }}
-            />
+           <StarRating
+  rating={Number(item['totalRatings'].averageRating)}
+  maxStars={5}
+  onChange={() => {}} // Required, even if disabled
+  starSize={15}
+  enableHalfStar={true}
+  starStyle={{ tintColor: '#ffe169' }}
+  color={currentTextColor}
+  enableSwiping={false}
+  animationConfig={{ scale: 1 }} // Optional: disables bounce animation
+/>
             <Text style={{ color: currentTextColor, fontSize: 15 }}>
               {item['totalRatings'].totalUsers}
             </Text>

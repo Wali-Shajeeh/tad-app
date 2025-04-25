@@ -7,10 +7,7 @@
 /* eslint-disable react-native/split-platform-components */
 
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React, {
-  useEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -23,7 +20,7 @@ import {
   ToastAndroid,
 } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import StarRating from 'react-native-star-rating';
+import StarRating from 'react-native-star-rating-widget';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import Icon2 from 'react-native-vector-icons/Ionicons';
 import api from '@/services/api';
@@ -105,14 +102,13 @@ const ListProduct = ({ item }: { item: any }): React.JSX.Element => {
           >
             <View style={{ flex: 0 }}>
               <StarRating
-                disabled={true}
                 maxStars={5}
-                rating={item['totalRatings'].averageRating}
-                // selectedStar={rating => ratingChange(productIndex.id, rating)}
-                fullStarColor={'#ffe169'}
-                starSize={20}
-                emptyStarColor={currentTextColor}
-                containerStyle={{ justifyContent: 'flex-start', gap: 5 }}
+                rating={Number(item['totalRatings'].averageRating)}
+                color={'#ffe169'}
+                starSize={15}
+                onChange={() => {}}
+                emptyColor={currentTextColor}
+                style={{ justifyContent: 'flex-start', gap: 5 }}
               />
             </View>
 

@@ -3,7 +3,7 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import StarRating from 'react-native-star-rating';
+import StarRating from 'react-native-star-rating-widget';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import { AppStackParamList } from '@/types/navigation';
 import { useTheme } from '../context/themeContext';
@@ -114,13 +114,13 @@ const RenderListProducts: React.FC<
             }}
           >
             <StarRating
-              disabled={true}
               maxStars={5}
               rating={Number(item['totalRatings'].averageRating)}
-              fullStarColor={'#ffe169'}
+              color={'#ffe169'}
               starSize={15}
-              emptyStarColor={currentTextColor}
-              containerStyle={{ justifyContent: 'flex-start', gap: 5 }}
+              onChange={() => {}}
+              emptyColor={currentTextColor}
+              style={{ justifyContent: 'flex-start', gap: 5 }}
             />
             <Text style={{ color: currentTextColor, fontSize: 15 }}>
               {item['totalRatings'].totalUsers}

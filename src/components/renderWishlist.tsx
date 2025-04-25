@@ -2,7 +2,7 @@
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
-import StarRating from 'react-native-star-rating';
+import StarRating from 'react-native-star-rating-widget';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 
 import { useTheme } from '@/context/themeContext';
@@ -91,13 +91,13 @@ const RenderWishlist = ({
           >
             <View style={{ flex: 0 }}>
               <StarRating
-                disabled={true}
                 maxStars={5}
                 rating={Number(item['totalRatings'].averageRating)}
-                fullStarColor={'#ffe169'}
-                starSize={20}
-                emptyStarColor={currentTextColor}
-                containerStyle={{ justifyContent: 'flex-start', gap: 5 }}
+                color={'#ffe169'}
+                starSize={15}
+                onChange={() => {}}
+                emptyColor={currentTextColor}
+                style={{ justifyContent: 'flex-start', gap: 5 }}
               />
             </View>
 
