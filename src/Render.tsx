@@ -28,6 +28,7 @@ const Render: React.FC<{
       const token = await AsyncStorage.getItem('authToken');
       if (!token) return 'onboarding';
       const decoded = jwtDecode<AuthPayload>(token);
+      console.log({ decoded });
       if (decoded.role == 'admin') {
         return 'orderScreenForAdmin';
       }
@@ -53,6 +54,7 @@ const Render: React.FC<{
         Font.loadAsync(Ionicons.font),
       ]);
       const route = await checkLoginStatus();
+      console.log(route);
       setInitialRoute(route);
       await new Promise((resolve) => {
         setTimeout(resolve, 500);

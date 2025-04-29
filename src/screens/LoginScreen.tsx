@@ -205,7 +205,13 @@ const LoginScreen: React.FC<object> = () => {
                 setRegLoading(false);
                 loginSuccess();
                 setTimeout(() => {
-                  navigation.navigate('mainScreens');
+                  if (decoded.role === 'admin') {
+                    setRegLoading(false);
+                    navigation.navigate('orderScreenForAdmin')
+                  } else {
+                    navigation.navigate('mainScreens');
+
+                  }
                 }, 500);
               } else if (response.status == 202) {
                 // this shouldn't be here. this should be in another app. this is to login admin
@@ -219,6 +225,7 @@ const LoginScreen: React.FC<object> = () => {
               }
             })
             .catch((error) => {
+              console.log('Login Error: ', error)
               if (error instanceof AxiosError) {
                 if (error?.response?.status == 304) {
                   setRegisteredEmail(email);
