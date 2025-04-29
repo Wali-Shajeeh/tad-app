@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -131,12 +132,22 @@ const ProductDisplay = (): React.JSX.Element => {
   >({});
   const dispatch = useDispatch();
   const { cart } = useSelector((state: AppState) => state.cartReducer);
-  const addNewCartItem = (newCartItem: any) => addToCart(newCartItem)(dispatch);
-  const removeCartItem = (cartItem: any) => deleteCartItem(cartItem)(dispatch);
-  const increaseQuantity = (product: any) =>
+  const addNewCartItem = (newCartItem: any) => {
+    console.log('Calling addToCart with:', newCartItem);
+    addToCart(newCartItem)(dispatch);
+  };
+  const removeCartItem = (cartItem: any) => {
+    console.log('Calling deleteCartItem with:', cartItem);
+    deleteCartItem(cartItem)(dispatch);
+  };
+  const increaseQuantity = (product: any) => {
+    console.log('Calling increaseItemQuantity with:', product);
     increaseItemQuantity(product)(dispatch);
-  const decreaseQuantity = (product: any) =>
+  };
+  const decreaseQuantity = (product: any) => {
+    console.log('Calling decreaseItemQuantity with:', product);
     decreaseItemQuantity(product)(dispatch);
+  };
   const [recommended, setRecommended] = useState([]);
   const [recommendedLoading, setRecommendedLoading] = useState(true);
   const [_userRating, setUserRating] = useState<number | null>(null);
@@ -269,7 +280,6 @@ const ProductDisplay = (): React.JSX.Element => {
   }, []);
 
   // function to update data on every change
-
   useFocusEffect(
     React.useCallback(() => {
       const getUser = async () => {
@@ -327,7 +337,6 @@ const ProductDisplay = (): React.JSX.Element => {
   }
 
   // this is a function to rate product
-
   // eslint-disable-next-line no-unused-vars
   async function rateProduct({ rating }: { rating: number }): Promise<void> {
     setUserRating(rating);
@@ -364,20 +373,77 @@ const ProductDisplay = (): React.JSX.Element => {
     }
   }
 
-  const handleAddToCart = (item: any) => {
-    addNewCartItem(item);
+  const handleAddToCart = () => {
+    if (!route.params?.productId) {
+      console.error('No productId in route.params');
+      showToastWithGravity('Product not found');
+      return;
+    }
+
+    // Convert sizes string (e.g., "6, 7, 8") to array of objects
+    let sizes = [{ size: 'Default', displayName: 'Default' }];
+    if (typeof route.params.sizes === 'string' && route.params.sizes) {
+      try {
+        sizes = route.params.sizes.split(',').map((size) => ({
+          size: size.trim(),
+          displayName: size.trim(),
+        }));
+      } catch (error) {
+        console.error('Error parsing sizes:', error);
+      }
+    }
+
+    // Convert colors string (e.g., "Black, White, Red") to array of objects
+    let colors = [{ color: '#000', displayName: 'Default' }];
+    if (typeof route.params.colors === 'string' && route.params.colors) {
+      try {
+        colors = route.params.colors.split(',').map((color) => ({
+          color: color.trim(),
+          displayName: color.trim(),
+        }));
+      } catch (error) {
+        console.error('Error parsing colors:', error);
+      }
+    }
+
+    const product = {
+      _id: route.params.productId,
+      title: route.params.title || 'Unknown Product',
+      price: route.params.price || 0,
+      discountPrice: route.params.discountPrice,
+      description: route.params.description || '',
+      image: route.params.image || '',
+      sizes,
+      colors,
+      brand: route.params.brand || '',
+      material: route.params.material || '',
+      condition: route.params.condition || '',
+      stock: route.params.stock || 10, // Default stock if not provided
+    };
+
+    console.log('route.params:', route.params);
+    console.log('Adding to cart:', product);
+    addNewCartItem(product);
+    showToastWithGravity('Added to cart');
   };
 
   const increaseQuantityState = (item: any) => {
-    if (item.quantity === item.stock) {
+    console.log('Increase quantity button pressed for:', item);
+    if (item.quantity < item.stock) {
+      console.log('Increasing quantity:', item);
       increaseQuantity(item);
+    } else {
+      showToastWithGravity('Stock limit reached');
     }
   };
 
   const decreaseQuantityState = (item: any) => {
-    if (item.quantity === 1) {
+    console.log('Decrease quantity button pressed for:', item);
+    if (item.quantity <= 1) {
+      console.log('Removing item from cart:', item);
       removeCartItem(item);
     } else {
+      console.log('Decreasing quantity:', item);
       decreaseQuantity(item);
     }
   };
@@ -589,25 +655,6 @@ const ProductDisplay = (): React.JSX.Element => {
                   />
                 </View>
               </View>
-              {/* this is to be used somewhere else */}
-              {/* <View style={{paddingHorizontal: 15, gap: 15}}>
-                {userData?.ratedProducts?.find(
-                  obj => obj.productId === route.params.productId,
-                ) ? null : (
-                  <Text style={styleInner._title}>Rate this product</Text>
-                )}
-
-                <StarRating
-                  disabled={false}
-                  maxStars={5}
-                  rating={UserRating}
-                  selectedStar={rating => rateProduct({rating})}
-                  fullStarColor={'#ffe169'}
-                  starSize={35}
-                  emptyStarColor={currentTextColor}
-                  containerStyle={{justifyContent: 'flex-start', gap: 5}}
-                />
-              </View> */}
             </View>
             {/* recommended section */}
             <Separator />
@@ -649,7 +696,10 @@ const ProductDisplay = (): React.JSX.Element => {
           >
             {cart.find((obj) => obj._id == route.params?.productId) == null && (
               <TouchableOpacity
-                onPress={() => handleAddToCart(route.params?.item)}
+                onPress={() => {
+                  console.log('Add to cart button pressed');
+                  handleAddToCart();
+                }}
               >
                 <View
                   style={{
@@ -707,8 +757,8 @@ const ProductDisplay = (): React.JSX.Element => {
                     <Icon name="plus" size={15} color={currentTextColor} />
                   </Pressable>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <TouchableOpacity onPress={() => removeCartItem(cartItem)}>
+                <View style={{ flex: 1, flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
                     <View
                       style={{
                         backgroundColor: themeColor,
@@ -723,6 +773,24 @@ const ProductDisplay = (): React.JSX.Element => {
                           Added to cart
                         </Text>
                       </View>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log('Remove from cart button pressed');
+                      removeCartItem(cartItem);
+                      showToastWithGravity('Removed from cart');
+                    }}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: '#FF4747',
+                        paddingVertical: 15,
+                        paddingHorizontal: 10,
+                        borderRadius: 10,
+                      }}
+                    >
+                      <Icon name={'trash'} size={25} color="#fff" />
                     </View>
                   </TouchableOpacity>
                 </View>

@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "1093515279825",
-    "project_id": "ecommerapp-e2f0b",
-    "storage_bucket": "ecommerapp-e2f0b.firebasestorage.app"
+    "project_number": "448543521670",
+    "firebase_url": "https://e-commerce-mob-9f5ca-default-rtdb.firebaseio.com",
+    "project_id": "e-commerce-mob-9f5ca",
+    "storage_bucket": "e-commerce-mob-9f5ca.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1093515279825:android:1c88248578bd2067bf74f0",
+        "mobilesdk_app_id": "1:448543521670:android:20e82a65e1c6d05f5c4a07",
         "android_client_info": {
           "package_name": "com.neduet.tad"
         }
@@ -15,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAPnl6AvzGbAaR9P5NY51cvYlIdMa0qDKI"
+          "current_key": "AIzaSyBozxj7uYMqENGwJ6HD6p1iDg43qoUqtbI"
         }
       ],
       "services": {

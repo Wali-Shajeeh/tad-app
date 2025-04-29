@@ -30,6 +30,7 @@ import Icon2 from 'react-native-vector-icons/Ionicons';
 
 // import NoFilterScreen from './NoFilterScreen';
 
+import CartDisplay from '@/components/CartDisplay';
 import { useMyBottomSheet } from '@/context/bottomSheetContext';
 import api from '@/services/api';
 import { AuthPayload } from '@/types/auth';
@@ -268,6 +269,7 @@ const HomeScreen = () => {
           </View>
         </View>
       </ScrollView>
+      <CartDisplay/>
     </View>
   );
 };
