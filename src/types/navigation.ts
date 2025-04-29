@@ -1,3 +1,5 @@
+import { GetAllOrdersResponse } from './api';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type AppStackParamList = {
   mainScreens: undefined;
@@ -25,7 +27,7 @@ export type AppStackParamList = {
     userLiked?: boolean;
   };
   orderDisplay: {
-    item: any;
+    item: GetAllOrdersResponse[number];
     userId: string;
   };
   checkoutPage: any;
@@ -36,4 +38,5 @@ export type AppStackParamList = {
   paystackCheckout: any;
   specials: any;
   myOrderDetail: { item: any };
+  addProduct: undefined;
 };

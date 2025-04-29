@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { jwtDecode } from 'jwt-decode';
 import React, { useEffect } from 'react';
 
+import AddProductScreen from './Admin/AddProduct';
 import OrderDisplay from './Admin/OrderDisplay';
 import OrderScreenForAdmin from './Admin/OrderScreenForAdmin';
 import CartDisplay from './components/CartDisplay';
@@ -123,6 +124,11 @@ const Navigation: React.FC<{ initialRouteName: string | null }> = ({
         <Stack.Screen
           name="orderDisplay"
           component={OrderDisplay} // this should be in another app
+          options={{ headerShown: false }}
+        />
+      <Stack.Screen
+          name="addProduct"
+          component={AddProductScreen} // this should be in another app
           options={{ headerShown: false }}
         />
         <Stack.Screen

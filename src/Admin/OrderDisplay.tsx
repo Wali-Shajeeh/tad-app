@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-// this is the order display for admin. this should be in another app
-
-import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import Icon from '@expo/vector-icons/FontAwesome6';
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+import { AxiosError, AxiosResponse } from 'axios';
 import React, { useRef, useState } from 'react';
 import {
   Image,
@@ -20,28 +19,34 @@ import {
   useWindowDimensions,
   Dimensions,
   Alert,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome6';
+import { ConfirmOrderBody, ConfirmOrderResponse } from '@/types/api';
 import { AppStackParamList } from '@/types/navigation';
+import { User } from '@/types/schema';
 import log from '@/utils/log';
 import LoadingModal from './LoadingModal';
 import api from '../services/api';
 
 const themeColor = '#6236FF';
+
+
 const OrderDisplay: React.FC<object> = () => {
   const route = useRoute<RouteProp<Pick<AppStackParamList, 'orderDisplay'>>>();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const window = useWindowDimensions();
   // const { item, userId } = route?.params;
-  const item: any = route?.params?.item;
-  const userId = route?.params?.userId
+  const item = route?.params?.item;
+
+  const userId = route?.params?.userId;
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const totalItems = item.products.reduce((x: any, y: { quantity: any; }) => x + (y?.quantity || 0), 0);
+  const totalItems = item.products.reduce((x, y) => x + (y?.quantity || 0), 0);
 
-  const totalPrice = item.products.reduce((x: any, y: { price: any; }) => x + (y?.price || 0), 0);
+  const totalPrice = item.products.reduce((x, y) => x + (y?.price || 0), 0);
 
   const scrollToPage = (pageNumber: number): void => {
     if (scrollRef.current) {
@@ -50,7 +55,9 @@ const OrderDisplay: React.FC<object> = () => {
     }
   };
 
-  const handleScroll = (event: { nativeEvent: { contentOffset: { x: any; }; }; }): void => {
+  const handleScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ): void => {
     const contentOffset = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(
       contentOffset / Dimensions.get('window').width,
@@ -58,48 +65,8 @@ const OrderDisplay: React.FC<object> = () => {
     setActiveIndex(currentIndex);
   };
 
-  const confirmOrder = async (): Promise<void> => {
-    try {
-      setModalVisible(true);
-      await api.public
-        .post('/orderConfirmation', {
-          orderId: item._id,
-          adminId: userId,
-          userId: item.user._id,
-          confirmed: true,
-        })
-        .then(async (response) => {
-          if (response.status == 200) {
-            setModalVisible(false);
-            Alert.alert('Order confirmed');
-            navigation.navigate('orderScreenForAdmin');
-            await api.public
-              .get(
-                `/sendMessage/${item.user.deviceToken}/${item.user._id}/order-delivered`,
-              )
-              .then((response2) => {
-                if (response2.status == 200) {
-                  log.debug('message sent');
-                }
-              })
-              .catch((error) => {
-                log.debug('couldnt send', error);
-              });
-          }
-        })
-        .catch((error) => {
-          if (error.response.status == 500) {
-            setModalVisible(false);
-            Alert.alert('Error from server.');
-          }
-        });
-    } catch {
-      setModalVisible(false);
-      Alert.alert('Something went wrong. Probably the network');
-    }
-  };
 
-  function showConfirmAlert() {
+  function showConfirmAlert(): void {
     Alert.alert(
       'Confirm order',
       'Are you sure?',
@@ -110,55 +77,87 @@ const OrderDisplay: React.FC<object> = () => {
         },
         {
           text: 'OK',
-          onPress: confirmOrder,
+          onPress: () => changeOrderStatus(true),
         },
       ],
       { cancelable: false },
     );
   }
 
-  const terminateOrder = async () => {
+  const _sendNotification = async (user: User, type: 'order-delivered' | 'order-cancelled'): Promise<void> => {
     try {
-      setModalVisible(true);
-      await api.public
-        .post('/orderConfirmation', {
-          orderId: item._id,
-          adminId: userId,
-          userId: item.user._id,
-          confirmed: false,
-        })
-        .then(async (response) => {
-          if (response.status == 200) {
-            setModalVisible(false);
-            Alert.alert('Order terminated');
-            navigation.navigate('orderScreenForAdmin');
-            await api.public
-              .get(
-                `/sendMessage/${item.user.deviceToken}/${item.user._id}/order-cancelled`,
-              )
-              .then((response2) => {
-                if (response2.status == 200) {
-                  log.debug('message sent');
-                }
-              })
-              .catch((error) => {
-                log.debug('couldnt send', error.response.data);
-              });
-          }
-        })
-        .catch((error) => {
-          if (error.response.status == 500) {
-            setModalVisible(false);
-            Alert.alert('Error from server.');
-          }
-        });
-    } catch {
-      setModalVisible(false);
-      Alert.alert('Something went wrong. Probably the network');
+      if (!user.deviceToken) {
+        throw new Error('Device token is not available');
+      }
+      const response = await api.public.get(
+        `/sendMessage/${user.deviceToken}/${user._id}/${type}`,
+      );
+
+      if (response.status !== 200) {
+        throw new Error('Failed to send notification');
+      }
+
+      log.debug('Notification sent successfully:', response.data);
+    } catch (error) {
+      log.debug('Error sending notification:', error);
+      let message = 'Something went wrong. Probably the network';
+
+      if (error instanceof AxiosError) {
+        log.debug('Error:', error?.response?.data);
+        message =
+          (error.response?.data as { message: string })?.message ||
+          'Something went wrong';
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
+      throw new Error(message);
     }
   };
 
-  function showTerminateAlert() {
+  const changeOrderStatus = async (confirmed: boolean): Promise<void> => {
+    try {
+      const type = confirmed ? 'confirmed' : 'terminated';
+      const notificationType = confirmed ? 'order-delivered' : 'order-cancelled' as const;
+      setModalVisible(true);
+
+      log.debug({ type, notificationType });
+
+      const response = await api.public.post<
+        ConfirmOrderBody,
+        AxiosResponse<ConfirmOrderResponse>
+      >('/orderConfirmation', {
+        orderId: item._id,
+        adminId: userId,
+        userId: item.user._id,
+        confirmed,
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Failed to ${type} order`);
+      }
+
+      // await sendNotification(item.user, notificationType);
+      Alert.alert(`Order ${type}`, `Order ${type} successfully`);
+      navigation.navigate('orderScreenForAdmin');
+    } catch (error) {
+      let message = 'Something went wrong. Probably the network';
+      if (error instanceof AxiosError) {
+        log.debug('Error:', error?.response?.data);
+        message =
+          (error.response?.data as { message: string })?.message ||
+          'Something went wrong';
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
+      Alert.alert(`Error`, message);
+    } finally {
+      setModalVisible(false);
+    }
+  };
+
+  function showTerminateAlert(): void {
     Alert.alert(
       'Terminate order',
       'Are you sure?',
@@ -169,7 +168,7 @@ const OrderDisplay: React.FC<object> = () => {
         },
         {
           text: 'OK',
-          onPress: terminateOrder,
+          onPress: () => changeOrderStatus(false),
         },
       ],
       { cancelable: false },
@@ -246,7 +245,7 @@ const OrderDisplay: React.FC<object> = () => {
                 <Text
                   style={{ fontWeight: 'bold', fontSize: 30, color: '#222' }}
                 >
-                  {totalPrice + item.shippingPrice}
+                  {totalPrice + (item?.shippingPrice || 0)}
                 </Text>
               </View>
               <View style={{ gap: 15 }}>
@@ -281,7 +280,7 @@ const OrderDisplay: React.FC<object> = () => {
                   <View style={styles.text_between_price}>
                     <Icon name="naira-sign" size={12} color={'#222'} />
                     <Text style={styles.text_between_price_number}>
-                      {totalPrice + item.shippingPrice}
+                      {totalPrice + (item?.shippingPrice || 0)}
                     </Text>
                   </View>
                 </View>
@@ -372,7 +371,7 @@ const OrderDisplay: React.FC<object> = () => {
         <View style={{ width: window.width }}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={{ padding: 15, gap: 15 }}>
-              {item.products.map((product: { image: any; name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; price: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; gender: any[]; color: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; size: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; quantity: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }, index: React.Key | null | undefined) => (
+              {item.products.map((product, index) => (
                 <View key={index} style={styles.detailsBox}>
                   <View style={{ gap: 15 }}>
                     <Image
@@ -403,7 +402,7 @@ const OrderDisplay: React.FC<object> = () => {
                     <View style={styles.text_between}>
                       <Text style={styles.text_between_header}>Gender</Text>
                       <Text style={styles.text_between_price_number}>
-                        {product.gender.join(', ')}
+                        {(product?.gender || [])?.join(', ')}
                       </Text>
                     </View>
                     <View style={styles.text_between}>

@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable react-native/split-platform-components */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from '@expo/vector-icons/FontAwesome6';
 import messaging from '@react-native-firebase/messaging';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import React, { useState } from 'react';
 import {
@@ -20,48 +18,25 @@ import {
   ScrollView,
   Platform,
   StatusBar,
-  ToastAndroid,
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/FontAwesome6';
+import InfoBox from '@/components/InfoBox';
 import api from '@/services/api';
+import {
+  LoginBody,
+  LoginResponse,
+  RefreshTokenBody,
+  RefreshTokenResponse,
+} from '@/types/api';
+import { AuthPayload } from '@/types/auth';
 import { AppStackParamList } from '@/types/navigation';
 import log from '@/utils/log';
-import { getAuthToken } from '@/utils/storage';
+import { setAuthToken, setUserId } from '@/utils/storage';
+import { showToast } from '@/utils/toast';
 import LevonText from '../../assets/levon-text.png';
 import { useGeneral } from '../context/generalContext';
 import { useTheme } from '../context/themeContext';
 
-type InfoBoxProps = {
-  message: string;
-  iconName: string;
-  bgColor: string;
-};
-
-const InfoBox: React.FC<InfoBoxProps> = ({ message, iconName, bgColor }) => (
-  <View
-    style={{
-      position: 'absolute',
-      top: 20,
-      width: '100%',
-      height: 100,
-
-      backgroundColor: bgColor,
-      alignSelf: 'center',
-      alignItems: 'center',
-      borderRadius: 10,
-      justifyContent: 'center',
-      padding: 15,
-    }}
-  >
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <Icon name={iconName} size={25} color={'#fff'} />
-      <Text style={{ color: '#fff', fontSize: 22, textAlign: 'center' }}>
-        {message}
-      </Text>
-    </View>
-  </View>
-);
 
 const LoginScreen: React.FC<object> = () => {
   const { setRegisteredEmail } = useGeneral();
@@ -149,103 +124,121 @@ const LoginScreen: React.FC<object> = () => {
   }
 
   function setFieldToDefault(): void {
+    setRegLoading(true);
+    setMessage('');
+    setAlertIcon(null);
+    setAlertColor(null);
+    setIsInfoVisible(false);
     setEmailError(false);
     setPasswordError(false);
-
     setIsValidEmail(true);
-
     setIsValidPassword(true);
   }
 
-  const showToastWithGravity = (text: string): void => {
-    ToastAndroid.showWithGravity(text, ToastAndroid.SHORT, ToastAndroid.BOTTOM);
+  const refreshToken = async (
+    userId: string,
+    deviceToken: string,
+  ): Promise<void> => {
+    try {
+      const response = await api.public.post<
+        RefreshTokenBody,
+        AxiosResponse<RefreshTokenResponse>
+      >('/refreshToken', {
+        userId: userId,
+        newToken: deviceToken,
+      });
+      if (response.status !== 200 || !response.data.success) {
+        throw new Error('Failed to refresh token');
+      }
+
+      log.debug('token changed');
+    } catch (error) {
+      log.debug('token failed to change', error);
+    }
   };
+
   const handleLoginUser = async (): Promise<void> => {
     const user = {
       email: email,
       password: password,
     };
+    setFieldToDefault();
 
     try {
-      setFieldToDefault();
-      if (validateFields()) {
-        if (regexValid()) {
-          setRegLoading(true);
-          await api.public
-            .post('/login', user)
-            .then(async (response) => {
-              if (response.status == 200) {
-                const data = response.data;
-                await AsyncStorage.setItem(
-                  'authToken',
-                  (data as { token: string }).token,
-                );
-                const deviceToken = await messaging().getToken();
-                const authToken = await getAuthToken();
-                if (!authToken) {
-                  throw new Error('Auth token not found!');
-                }
-                const decoded = jwtDecode<{ userId: string; role: string }>(
-                  authToken,
-                );
+      const isValidFields = validateFields();
 
-                // store device token in database
-                await api.public
-                  .post('/refreshToken', {
-                    userId: decoded.userId,
-                    newToken: deviceToken,
-                  })
-                  .then((response) => {
-                    if (response.status == 200) {
-                      log.debug('token changed');
-                    } else {
-                      log.debug('token failed to change');
-                    }
-                  });
-                setRegLoading(false);
-                loginSuccess();
-                setTimeout(() => {
-                  if (decoded.role === 'admin') {
-                    setRegLoading(false);
-                    navigation.navigate('orderScreenForAdmin')
-                  } else {
-                    navigation.navigate('mainScreens');
-
-                  }
-                }, 500);
-              } else if (response.status == 202) {
-                // this shouldn't be here. this should be in another app. this is to login admin
-                const data = response.data;
-                await AsyncStorage.setItem(
-                  'authToken',
-                  (data as { token: string }).token,
-                );
-                setRegLoading(false);
-                navigation.navigate('orderScreenForAdmin');
-              }
-            })
-            .catch((error) => {
-              console.log('Login Error: ', error)
-              if (error instanceof AxiosError) {
-                if (error?.response?.status == 304) {
-                  setRegisteredEmail(email);
-                  setRegLoading(false);
-                  navigation.navigate('verify');
-                } else if (error?.response?.status === 404) {
-                  setRegLoading(false);
-                  emailPasswordError();
-                } else if (error?.response?.status === 500) {
-                  showToastWithGravity('Server error');
-                  setRegLoading(false);
-                  unknownError();
-                }
-              }
-            });
-        }
+      if (!isValidFields) {
+        setRegLoading(false);
+        // setMessage('Please fill all fields');
+        // setAlertIcon('exclamation');
+        // setAlertColor('#e6b800');
+        // showInfo();
+        return;
       }
+
+      const isRegexValid = regexValid();
+
+      if (!isRegexValid) {
+        setRegLoading(false);
+        // setMessage('Invalid email or password');
+        // setAlertIcon('exclamation');
+        // setAlertColor('#e6b800');
+        // showInfo();
+        return;
+      }
+
+      const resposne = await api.public.post<
+        LoginBody,
+        AxiosResponse<LoginResponse>
+      >('/login', user);
+
+      if (!resposne.data.success) {
+        throw new Error(resposne.data.message);
+      }
+
+      await setAuthToken(resposne.data.token);
+      const deviceToken = await messaging().getToken();
+      const decoded = jwtDecode<AuthPayload>(resposne.data.token);
+      if (!decoded) {
+        throw new Error('Failed to decode token');
+      }
+      await refreshToken(decoded.userId, deviceToken);
+      await setUserId(decoded.userId);
+      loginSuccess();
+
+      setTimeout(() => {
+        if (decoded.role === 'admin') {
+          setRegLoading(false);
+          navigation.navigate('orderScreenForAdmin');
+        } else {
+          navigation.navigate('mainScreens');
+        }
+      }, 500);
+
     } catch (error) {
+      log.debug('Login Error: ', error);
+      if (error instanceof AxiosError) {
+        if (error?.response?.status == 304) {
+          setRegisteredEmail(email);
+          navigation.navigate('verify');
+        } else if (error?.response?.status === 404) {
+          emailPasswordError();
+        } else if (error?.response?.status === 500) {
+          showToast({
+            type: 'error',
+            message: 'Server error',
+          })
+          unknownError();
+        }
+      } else if (error instanceof Error) {
+        setRegLoading(false);
+        setMessage(error.message);
+        setAlertIcon('exclamation');
+        setAlertColor('#e6b800');
+        showInfo();
+      }
+    } finally {
       setRegLoading(false);
-      log.debug(error);
     }
   };
 
@@ -316,7 +309,17 @@ const LoginScreen: React.FC<object> = () => {
                     ]}
                     placeholder="Email"
                     placeholderTextColor={currentTextColor}
-                    onChangeText={(newText) => setEmail(newText)}
+                    onChangeText={(newText) => {
+                      if (newText === '') {
+                        setEmailError(true);
+                        setIsValidEmail(true);
+                      } else {
+                        const isValid = emailRegex.test(newText);
+                        setIsValidEmail(isValid);
+                        setEmailError(!isValid);
+                      }
+                      setEmail(newText)
+                    }}
                     defaultValue={email}
                     keyboardType="email-address"
                     onFocus={() => setEmailIsFocus(true)}
@@ -344,7 +347,18 @@ const LoginScreen: React.FC<object> = () => {
                     secureTextEntry={isPasswordVisible ? false : true}
                     placeholder="Password"
                     placeholderTextColor={currentTextColor}
-                    onChangeText={(newText) => setPassword(newText)}
+                    onChangeText={(newText) => {
+                      if (newText === '') {
+                        setPasswordError(true);
+                        setIsValidPassword(true);
+                      } else {
+                        const isValid =
+                          !passwordRegex.test(newText) && newText.length >= 6;
+                        setIsValidPassword(isValid);
+                        setPasswordError(!isValid);
+                      }
+                      setPassword(newText)
+                    }}
                     defaultValue={password}
                     onFocus={() => setPasswordIsFocus(true)}
                     onBlur={() => setPasswordIsFocus(false)}

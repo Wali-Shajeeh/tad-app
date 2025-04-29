@@ -44,6 +44,7 @@ module.exports = {
       },
       infoPlist: {
         UIBackgroundModes: ['remote-notification'],
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photo library to upload product images."
       },
       bundleIdentifier: getUniqueIdentifier(),
     },
@@ -56,6 +57,7 @@ module.exports = {
         'CAMERA',
         'READ_EXTERNAL_STORAGE',
         'WRITE_EXTERNAL_STORAGE',
+        "READ_MEDIA_IMAGES"
       ],
       softwareKeyboardLayoutMode: 'pan',
       package: getUniqueIdentifier(),
@@ -66,6 +68,14 @@ module.exports = {
     },
     plugins: [
       'expo-asset',
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photo library to upload product images.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos.",
+          "cameraRollPermission": "Allow $(PRODUCT_NAME) to access your camera roll to upload product images.",
+        }
+      ],
       [
         'expo-splash-screen',
         {
