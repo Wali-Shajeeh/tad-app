@@ -1,0 +1,52 @@
+{
+  "cli": {
+    "version": ">= 6.0.0"
+  },
+  "build": {
+    "production": {
+      "env": {
+        "ENVIRONMENT": "production",
+        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:8000"
+      },
+      "ios": {
+        "resourceClass": "m-medium",
+        "image": "default"
+      },
+      "channel": "production"
+    },
+    "preview": {
+      "extends": "production",
+      "distribution": "internal",
+      "env": {
+        "ENVIRONMENT": "development",
+        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:8000"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "resourceClass": "m-medium",
+        "image": "default"
+      },
+      "channel": "preview"
+    },
+    "preview-development": {
+      "extends": "preview",
+      "env": {
+        "ENVIRONMENT": "development",
+        "EXPO_PUBLIC_BASE_URL": "http://localhost:8000"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "preview-development"
+    },
+    "dev": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "image": "ubuntu-18.04-jdk-11-ndk-r19c"
+      }
+    }
+  }
+}

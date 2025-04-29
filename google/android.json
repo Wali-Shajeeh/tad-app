@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "448543521670",
+    "firebase_url": "https://e-commerce-mob-9f5ca-default-rtdb.firebaseio.com",
+    "project_id": "e-commerce-mob-9f5ca",
+    "storage_bucket": "e-commerce-mob-9f5ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448543521670:android:20e82a65e1c6d05f5c4a07",
+        "android_client_info": {
+          "package_name": "com.neduet.tad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBozxj7uYMqENGwJ6HD6p1iDg43qoUqtbI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
